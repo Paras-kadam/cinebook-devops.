@@ -1,0 +1,139 @@
+# CineBook
+
+A cinema booking demo for a college DevOps project. Browse ten original films, filter by genre and language, sort by title or sample rating, choose a showtime and seats, confirm a reservation, and retrieve or print the ticket using its booking reference. Each film has distinct local poster artwork, a synopsis, price, and upcoming shows. This demo does not process payments or issue real cinema tickets. Ratings are clearly labeled demo/sample data.
+
+## Movie-loading fix
+
+The original Vite proxy sent `/api` requests to port 3000, which was occupied by Grafana. Its `/api/health` returned `database: "ok"` and a Grafana version, while `/api/movies` returned HTTP 401. React therefore received another application's response and showed the intermission error and a zero count. The existing SQLite database opened successfully; it was not the cause.
+
+CineBook now defaults to API port 3001. The API and Vite proxy read the same root `.env` configuration. Before serving the development UI, Vite waits for CineBook's exact healthy response instead of accepting a health endpoint from another service. API outages show a clear retry state; loading uses poster skeletons. No frontend mock catalogue or fake booking response is used.
+
+## Run locally
+
+Use Node.js 24 and npm. The `.nvmrc` and `package.json` declare the supported Node version.
+
+```sh
+npm ci
+npm run dev
+```
+
+Open <http://localhost:5173>. Vite serves the React app and proxies `/api` and `/metrics` to Express on port 3001. `npm run dev` starts both services. Stop both servers with Ctrl+C. Stop an existing run before starting another on the same ports.
+
+To serve the production build from one process:
+
+```sh
+npm run build
+npm start
+```
+
+Open <http://localhost:3001>. Check <http://localhost:3001/api/health> for database connectivity.
+
+If Node.js 24 is not on your Windows PATH, this workspace also includes a local runtime. In PowerShell, activate it for the current session before running npm commands:
+
+```powershell
+Set-Location -LiteralPath 'C:\Users\Paras Kadam\Desktop\cinebook-devops'
+$runtimeDir = (Resolve-Path -LiteralPath '.tools\node-v24.22.0-win-x64').Path
+$env:Path = $runtimeDir + ';' + $env:Path
+npm.cmd run dev
+```
+
+The `.tools` directory is ignored by Git; a fresh checkout needs its own Node.js 24 installation.
+
+## Configuration and data
+
+The defaults work without an `.env` file. Copy `.env.example` to `.env` to customize them.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PORT` | `3001` | Express API and production website port; Vite proxy follows it. |
+| `VITE_PORT` | `5173` | Development website port. |
+| `DB_PATH` | `data/cinebook.sqlite` | Persistent SQLite database, relative to the project root. |
+
+The proxy automatically follows `PORT`; no source edit is needed when changing it. Use a free API port and keep Grafana on its existing port 3000. If an older `.env` specifies `PORT=3000`, change it to `PORT=3001` before restarting. Movies and the next seven days of showtimes are seeded automatically. SQLite stores bookings and enforces unique reservations per seat and showtime. Keep the `data` directory between restarts to retain reservations. Existing six-film databases gain the four new films without deleting prior bookings or duplicating seeds.
+
+## Checks
+
+```sh
+npm test
+npm run build
+npm run test:e2e
+```
+
+The backend tests cover validation, pricing, competing reservations, transaction rollback, persistence, seed upgrades, metrics, and production asset serving. Startup regression tests reject the Grafana health response and cover concurrent service readiness. The browser tests cover the full multi-seat booking flow, ticket lookup, navigation, all ten posters, filtering/sorting, skeletons, artwork fallback, API recovery, and layouts from 320px to 1440px.
+
+Verified in this workspace: `npm test` passed 58 tests (54 API + 4 startup), `npm run build` succeeded, and the full `npm run test:e2e` suite passed all 12 browser tests. A real `npm run dev` launch on temporary ports also verified the configurable proxy and rendered all ten films. The Docker build, production smoke checks, metrics, non-root runtime, duplicate-seat rejection, and booking retrieval after container replacement passed. Temporary verification processes and volumes were removed; existing local application data was retained. GitHub Actions has not been run remotely.
+
+Browser tests use installed Microsoft Edge on Windows and Playwright Chromium on Linux/macOS. On Linux/macOS, install the browser first with `npx playwright install --with-deps chromium`. Build first; Playwright launches and stops its own production server on port 3100 with a separate `data/browser-test.sqlite` database. Test reports and screenshots are written to `.artifacts`; failure traces are written to `test-results`.
+
+With a production server running, `npm run test:smoke` checks database connectivity, built JS/CSS, all ten posters, showtimes, seats, and metrics without creating bookings. It defaults to port 3001 or the process's `PORT` setting. Set `SMOKE_BASE_URL` to check a different local URL.
+
+## Run with Docker
+
+Start Docker Desktop in Linux container mode, then run:
+
+```sh
+docker compose up --build --detach --wait
+npm run test:smoke
+```
+
+Open <http://localhost:3001>. Stop the local Express development server first to free that port, or choose another host port. The smoke command requires local Node.js 24; the container itself does not require a local Node installation. The image builds the frontend, installs Linux native dependencies, and runs Express as the `node` user. Its health check calls `/api/health`. The container uses `Asia/Kolkata` for the demo cinema's showtimes.
+
+Compose publishes the app on localhost and stores SQLite in the `cinebook-data` named volume. The host `data` directory and `.env` file are excluded from the image. Compose reads `PORT` from your environment or `.env` as the host port; the container always listens on port 3000. Container `DB_PATH` is fixed to the named volume. When using a different host port, set `SMOKE_BASE_URL` to the matching URL.
+
+```sh
+docker compose logs --follow
+docker compose down
+```
+
+Stopping with `docker compose down` preserves reservations. `docker compose down --volumes` deletes the demo container's booking data. Local application data in `data/` is separate.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on pushes, pull requests, and manual dispatch. It installs Node.js 24 from `.nvmrc`, runs the API tests, builds the frontend, and runs browser tests with Chromium. Reports and screenshots are retained for seven days. A second job builds the Docker image, waits for its health check, and runs the smoke checks against the container before removing its temporary volume.
+
+Place this project at the root of its own GitHub repository for the workflow to run. The workflow builds and tests locally on GitHub runners; it does not publish an image or deploy the application.
+
+## API
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/health` | Check database connectivity. |
+| GET | `/api/movies` | List films. |
+| GET | `/api/movies/:id` | Get film details. |
+| GET | `/api/showtimes` | List upcoming sessions; optional `movieId` and `date=YYYY-MM-DD` filters. |
+| GET | `/api/movies/:id/showtimes` | List upcoming dates and sessions. |
+| GET | `/api/showtimes/:id/seats` | Get seat availability and pricing. |
+| POST | `/api/bookings` | Reserve seats and return a ticket. |
+| GET | `/api/bookings/:reference` | Retrieve a ticket. |
+| GET | `/metrics` | Prometheus text exposition for request counts/duration, uptime, movies, and bookings. |
+
+Booking requests contain `showtimeId`, `seats` (for example `["C4", "C5"]`), `customerName`, and `customerEmail`. The server calculates totals and returns HTTP 409 if a selected seat has already been reserved. A booking reference grants access to that demo ticket, so treat it as private.
+
+The database has `movies`, `showtimes`, `bookings`, and `booked_seats` tables. Foreign keys, WAL mode, an immediate booking transaction, and `UNIQUE(showtime_id, seat)` protect reservations. Movie prices and upcoming sessions are derived from stored showtimes; no destructive schema migration is needed. Metrics use route templates rather than customer data or booking references. Existing Docker and GitHub Actions support is preserved; no monitoring deployment is required for this repair.
+
+## Manual booking check and report screenshots
+
+1. Open <http://localhost:5173> and confirm the Now Showing count is 10 with ten distinct posters.
+2. Search for a title; combine genre/language filters and try title/rating sorting. Clear filters afterward.
+3. Select **Book Tickets**, choose a date/showtime, and continue to the seat map.
+4. Select two available seats, enter a name/email, check the total, and confirm.
+5. Save the reference on the **Booking Successful** digital ticket. Use **Print ticket** to open the browser print dialog.
+6. Open **My bookings**, enter the reference, and confirm the same ticket returns after reloading.
+7. Return to the same showtime and confirm those seats are disabled. Restart the API and look up the reference again to verify persistence.
+
+Capture these for the college report: desktop homepage with ten movies/count, mobile homepage, search/filter/sort results, movie details with dates/showtimes, selected seats with customer details/total, successful digital ticket/reference, My Bookings retrieval, `/api/health` and `/api/movies` responses, `/metrics`, and successful build/test terminal output. Browser screenshots are saved in `.artifacts/home-desktop.png`, `home-mobile.png`, `movie-details.png`, `seat-selection.png`, and `booking-confirmation.png` by the automated checks.
+
+## Project layout
+
+- `client/src`: React UI and responsive styles.
+- `client/public`: Local artwork and favicon.
+- `server`: Express routes, SQLite schema, and seed data.
+- `tests`: API and browser tests.
+- `scripts`: Production smoke checks.
+- `.github/workflows`: CI validation.
+- `client/dist`: Generated production assets, ignored by Git.
+- `data`: Local databases, ignored by Git.
+
+Run commands from the project root. This folder currently sits inside a parent Git repository; it does not have its own `.git` directory.
+
+Implementation references: [Docker's Node.js guide](https://docs.docker.com/guides/nodejs/), [Playwright CI](https://playwright.dev/docs/ci), and [GitHub Actions for Node.js](https://docs.github.com/en/actions/tutorials/build-and-test-code/nodejs).

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" role="img" aria-labelledby="title desc">
+  <title id="title">Echoes of Tomorrow</title><desc id="desc">An amber time portal arcs above a cyan futuristic skyline and a solitary traveler.</desc>
+  <defs>
+    <linearGradient id="sky" x2="1" y2="1"><stop stop-color="#102633"/><stop offset=".5" stop-color="#25434b"/><stop offset="1" stop-color="#482b32"/></linearGradient>
+    <radialGradient id="light"><stop stop-color="#d9a25a" stop-opacity=".44"/><stop offset="1" stop-color="#d09850" stop-opacity="0"/></radialGradient>
+    <linearGradient id="ring" x2="1" y2="1"><stop stop-color="#f5db9b"/><stop offset=".5" stop-color="#d89457"/><stop offset="1" stop-color="#bc6845"/></linearGradient>
+    <linearGradient id="road" x2="0" y2="1"><stop stop-color="#7bb7b7" stop-opacity=".6"/><stop offset="1" stop-color="#8fd1c9" stop-opacity="0"/></linearGradient>
+    <linearGradient id="fade" x2="0" y2="1"><stop stop-color="#0d2029" stop-opacity="0"/><stop offset=".6" stop-color="#101c26"/><stop offset="1" stop-color="#101c26"/></linearGradient>
+    <pattern id="windows" width="15" height="18" patternUnits="userSpaceOnUse"><path d="M4 4h2v8H4z" fill="#73c4c6" opacity=".48"/></pattern>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h400v600H0z"/>
+  <ellipse cx="201" cy="218" rx="200" ry="217" fill="url(#light)"/>
+  <g transform="rotate(-24 200 219)" fill="none"><circle cx="200" cy="219" r="130" stroke="#c9a469" stroke-opacity=".18" stroke-width="20"/><circle cx="200" cy="219" r="130" stroke="url(#ring)" stroke-width="3"/><circle cx="200" cy="219" r="117" stroke="#efcf91" stroke-opacity=".6"/><circle cx="200" cy="219" r="107" stroke="#d3aa71" stroke-width="6" stroke-dasharray="1 13"/><path d="M200 89v18m130 112h-18M200 349v-18M70 219h18" stroke="#ffe6ac" stroke-width="3"/><path d="M200 121v98l61 35" stroke="#f4cc86" stroke-width="2"/><circle cx="200" cy="219" r="5" fill="#f6dba0" stroke="#f3d998"/></g>
+  <path d="M71 177h130m29 0h99M55 220h64m163 0h59M70 261h95m73 0h95" stroke="#e9c083" stroke-opacity=".1"/>
+  <path d="M0 319h37v-85l18-13 17 13v85h19v-47h30v47h22v-103l19-32 18 32v103h38v-64h28v64h22v-112l23-18 23 18v112h15v-46h31v46h16v-78h24v359H0Z" fill="#244c58"/>
+  <path d="M0 349h19v-71h32v71h19v-40h23v40h21v-93h35v93h25v-41h22v41h27v-112h33v112h24v-62h26v62h25v-109h39v109h30v251H0Z" fill="#132d3d"/>
+  <path d="M0 349h19v-71h32v71h19v-40h23v40h21v-93h35v93h25v-41h22v41h27v-112h33v112h24v-62h26v62h25v-109h39v109h30v251H0Z" fill="url(#windows)"/>
+  <path d="M127 267v72m107-90v90m104-88v89M45 291v49m251-42v41" stroke="#79c7c6" opacity=".7"/>
+  <path d="M0 371h400v229H0z" fill="#102632"/><path d="m195 351-88 249h196L212 351Z" fill="url(#road)"/>
+  <path d="M0 394h400m-400 27h400m-400 42h400m-400 59h400M175 359 26 600m201-241 149 241" stroke="#629599" stroke-opacity=".25"/>
+  <path d="m0 410 160-52m240 52-165-52" stroke="#b88c65" stroke-opacity=".6"/>
+  <g fill="#f5c482"><circle cx="108" cy="136" r="1.4"/><circle cx="286" cy="101" r="1"/><circle cx="316" cy="161" r="1"/><circle cx="59" cy="244" r="1.2"/></g>
+  <g fill="#0a1b28"><circle cx="201" cy="358" r="7"/><path d="m194 366 15-1 9 31-7 3-3 29h-6l-2-27-6 27h-6l3-32-4-4Z"/><path d="m194 370-10 22 4 3 13-21m7-2 11 20-5 3-12-19"/></g>
+  <path d="m190 365 6 1-8 31-8-4Z" fill="#cba069" opacity=".7"/>
+  <path d="M0 411h400v189H0z" fill="url(#fade)"/>
+  <text x="200" y="48" fill="#d8d5bd" font-family="Arial,sans-serif" font-size="8" letter-spacing="2.7" text-anchor="middle">THE FUTURE REMEMBERS YOUR NAME</text><path d="M180 67h40" stroke="#d6ae76" opacity=".6"/>
+  <text x="200" y="483" fill="#e9d3a6" font-family="Arial,sans-serif" font-size="36" font-weight="700" letter-spacing="6" text-anchor="middle">ECHOES</text>
+  <text x="200" y="507" fill="#a1c9c5" font-family="Arial,sans-serif" font-size="11" letter-spacing="7" text-anchor="middle">OF</text>
+  <text x="200" y="542" fill="#b5d4cf" font-family="Arial,sans-serif" font-size="29" font-weight="700" letter-spacing="3" text-anchor="middle">TOMORROW</text>
+  <text x="200" y="571" fill="#8babae" font-family="Arial,sans-serif" font-size="7" letter-spacing="3.6" text-anchor="middle">A CINEBOOK ORIGINAL</text>
+</svg>

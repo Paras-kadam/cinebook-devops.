@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" role="img" aria-labelledby="title desc">
+  <title id="title">Deep Blue</title><desc id="desc">An expedition submarine and a lone diver descend into a luminous blue ocean trench.</desc>
+  <defs>
+    <linearGradient id="sea" x2="0" y2="1"><stop stop-color="#3f9cae"/><stop offset=".25" stop-color="#126681"/><stop offset=".65" stop-color="#092f51"/><stop offset="1" stop-color="#07172f"/></linearGradient>
+    <linearGradient id="ray" x2="0" y2="1"><stop stop-color="#b5f4e3" stop-opacity=".28"/><stop offset="1" stop-color="#7fd8df" stop-opacity="0"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#41c6cf" stop-opacity=".46"/><stop offset="1" stop-color="#17a4bd" stop-opacity="0"/></radialGradient>
+    <linearGradient id="hull" x2="0" y2="1"><stop stop-color="#82bfc2"/><stop offset=".36" stop-color="#28647b"/><stop offset="1" stop-color="#102b49"/></linearGradient>
+    <linearGradient id="beam" x2="1" y2="1"><stop stop-color="#e8f2cd" stop-opacity=".65"/><stop offset="1" stop-color="#a1f1de" stop-opacity="0"/></linearGradient>
+    <linearGradient id="fade" x2="0" y2="1"><stop stop-color="#07172c" stop-opacity="0"/><stop offset=".6" stop-color="#07172c"/><stop offset="1" stop-color="#07172c"/></linearGradient>
+  </defs>
+  <path fill="url(#sea)" d="M0 0h400v600H0z"/>
+  <ellipse cx="202" cy="272" rx="196" ry="221" fill="url(#glow)"/>
+  <path d="m73 0 33 0 44 413H31Zm78 0 14 0 53 431-94-29Zm43 0 30 0 152 393-116 28Zm82 0 14 0 110 228v132Z" fill="url(#ray)"/>
+  <path d="M0 105q63-14 121-1t119-2 160-5m-400 19q66-11 138 0t134-6 128-1M16 88q75-13 140-1m77-1q83-12 154-4" fill="none" stroke="#a2e2d6" stroke-opacity=".28"/>
+  <g fill="#0e435f" opacity=".75"><path d="m42 172 8 3 8-6-1 9 6 3-13-1Zm258 36 11 4 10-6-2 10 5 3-13-2Zm-237 88 8 2 7-4-1 7 5 2-11-1Zm224-35 5 2 6-4-1 6 3 2-8-1Z"/></g>
+  <path d="m0 310 28-35 13 72 21-20 17 60 25-12 33 78-1 147H0Zm400-41-26 21-9 50-23-10-13 64-19-12-29 70-14 148h133Z" fill="#0b2b45"/>
+  <path d="m0 362 22-19 7 52 27-18 14 47 24-13 26 89H0Zm400-25-19 19-11 67-20-15-19 54-19-11-25 74h113Z" fill="#081f37"/>
+  <path d="m113 226 36-4 6-22h26l8 22h68q29 0 43 21-16 23-44 23H124q-30-2-36-20l-21 8-6-14 26-6q8-8 26-8Z" fill="url(#hull)" stroke="#76b9c2" stroke-opacity=".7"/>
+  <path d="M127 230h125q27 0 37 13M110 258h146" stroke="#bad5cb" stroke-opacity=".35" fill="none"/>
+  <path d="M162 200v-20h17v-8m-12 50v-13m82 13 8-12h18l-2 12m-146 44 11 11h97l6-11" fill="none" stroke="#234b64" stroke-width="6"/>
+  <g fill="#c6f0dd" stroke="#153e56" stroke-width="4"><circle cx="154" cy="245" r="7"/><circle cx="183" cy="245" r="7"/><circle cx="212" cy="245" r="7"/><circle cx="241" cy="245" r="7"/></g>
+  <path d="m295 243 105-32v74Z" fill="url(#beam)"/>
+  <g transform="rotate(24 201 341)" fill="#071b30" stroke="#071b30"><circle cx="201" cy="325" r="7"/><path d="m195 334 14 0 4 22-8 8-10-8Z"/><path d="m199 357-4 25-10 9 10 1 10-30m1-5 8 22 8 4-2 7-12-9-8-20m-4-24-13 13 4 4 14-10m7-7 13 9 13-7 3 4-17 11-13-9" stroke-width="2"/><rect x="191" y="336" width="7" height="20" rx="3" fill="#376775"/></g>
+  <path d="m239 340 96 12-36 47Z" fill="url(#beam)"/>
+  <g fill="none" stroke="#9ce5d8" stroke-opacity=".5"><circle cx="190" cy="306" r="2.5"/><circle cx="183" cy="293" r="2"/><circle cx="185" cy="280" r="1.4"/></g>
+  <g fill="#77caca" opacity=".5"><circle cx="102" cy="311" r="1"/><circle cx="264" cy="297" r="1.2"/><circle cx="153" cy="387" r="1"/><circle cx="271" cy="389" r="1"/><circle cx="104" cy="197" r=".8"/><circle cx="315" cy="158" r="1"/><circle cx="224" cy="150" r=".8"/></g>
+  <path d="M0 413h400v187H0z" fill="url(#fade)"/>
+  <text x="200" y="48" fill="#d5ece0" font-family="Arial,sans-serif" font-size="8" letter-spacing="3" text-anchor="middle">THE UNKNOWN RUNS DEEPER</text><path d="M180 67h40" stroke="#b7ddd4" opacity=".6"/>
+  <text x="200" y="492" fill="#d2efeb" font-family="Arial,sans-serif" font-size="48" font-weight="700" letter-spacing="10" text-anchor="middle">DEEP</text>
+  <text x="200" y="538" fill="#68bfd1" font-family="Arial,sans-serif" font-size="47" font-weight="700" letter-spacing="10" text-anchor="middle">BLUE</text>
+  <text x="200" y="571" fill="#779db1" font-family="Arial,sans-serif" font-size="7" letter-spacing="3.6" text-anchor="middle">A CINEBOOK ORIGINAL</text>
+</svg>

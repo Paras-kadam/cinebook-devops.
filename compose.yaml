@@ -1,0 +1,19 @@
+services:
+  cinebook:
+    build:
+      context: .
+      target: runtime
+    ports:
+      - "127.0.0.1:${PORT:-3001}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DB_PATH: /app/data/cinebook.sqlite
+      TZ: Asia/Kolkata
+    volumes:
+      - cinebook-data:/app/data
+    init: true
+    restart: unless-stopped
+
+volumes:
+  cinebook-data:
