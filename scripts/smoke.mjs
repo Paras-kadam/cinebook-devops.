@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 
-const baseURL = new URL(process.env.SMOKE_BASE_URL || `http://127.0.0.1:${process.env.PORT || 3001}`);
+const baseURL = new URL(process.env.SMOKE_BASE_URL || `http://127.0.0.1:${process.env.APP_PORT || process.env.PORT || 3001}`);
 
 async function get(path) {
   const url = new URL(path, baseURL);

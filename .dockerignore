@@ -13,10 +13,16 @@ playwright-report
 coverage
 .env
 .env.*
+**/.env
+**/.env.*
 *.sqlite
 *.sqlite-*
 *.db
 *.db-*
+**/*.sqlite
+**/*.sqlite-*
+**/*.db
+**/*.db-*
 *.log
 .DS_Store
 Thumbs.db

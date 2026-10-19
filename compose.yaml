@@ -1,10 +1,11 @@
 services:
-  cinebook:
+  app:
+    image: cinebook:local
     build:
       context: .
       target: runtime
     ports:
-      - "127.0.0.1:${PORT:-3001}:3000"
+      - "127.0.0.1:${APP_PORT:-3080}:3000"
     environment:
       NODE_ENV: production
       PORT: "3000"
@@ -14,6 +15,14 @@ services:
       - cinebook-data:/app/data
     init: true
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
 
 volumes:
   cinebook-data:

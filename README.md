@@ -46,6 +46,7 @@ The defaults work without an `.env` file. Copy `.env.example` to `.env` to custo
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `PORT` | `3001` | Express API and production website port; Vite proxy follows it. |
+| `APP_PORT` | `3080` | Windows host port for Docker Compose; container Express stays on 3000. |
 | `VITE_PORT` | `5173` | Development website port. |
 | `DB_PATH` | `data/cinebook.sqlite` | Persistent SQLite database, relative to the project root. |
 
@@ -65,27 +66,37 @@ Verified in this workspace: `npm test` passed 58 tests (54 API + 4 startup), `np
 
 Browser tests use installed Microsoft Edge on Windows and Playwright Chromium on Linux/macOS. On Linux/macOS, install the browser first with `npx playwright install --with-deps chromium`. Build first; Playwright launches and stops its own production server on port 3100 with a separate `data/browser-test.sqlite` database. Test reports and screenshots are written to `.artifacts`; failure traces are written to `test-results`.
 
-With a production server running, `npm run test:smoke` checks database connectivity, built JS/CSS, all ten posters, showtimes, seats, and metrics without creating bookings. It defaults to port 3001 or the process's `PORT` setting. Set `SMOKE_BASE_URL` to check a different local URL.
+With a production server running, `npm run test:smoke` checks database connectivity, built JS/CSS, all ten posters, showtimes, seats, and metrics without creating bookings. Set `SMOKE_BASE_URL` to check a specific URL, or use `APP_PORT` for Docker and `PORT` for the local Node server (fallback 3001).
 
 ## Run with Docker
 
-Start Docker Desktop in Linux container mode, then run:
+Start Docker Desktop in Linux container mode. The production Compose service is named **app**. From Windows PowerShell:
 
-```sh
-docker compose up --build --detach --wait
-npm run test:smoke
+```powershell
+Set-Location -LiteralPath 'C:\Users\Paras Kadam\Desktop\cinebook-devops'
+$env:APP_PORT = '3080'
+docker compose config --quiet
+docker compose build app
+docker compose up --detach --wait --wait-timeout 90 app
+docker compose ps app
+Invoke-RestMethod 'http://localhost:3080/api/health'
+docker compose logs --tail 100 app
 ```
 
-Open <http://localhost:3001>. Stop the local Express development server first to free that port, or choose another host port. The smoke command requires local Node.js 24; the container itself does not require a local Node installation. The image builds the frontend, installs Linux native dependencies, and runs Express as the `node` user. Its health check calls `/api/health`. The container uses `Asia/Kolkata` for the demo cinema's showtimes.
+Open <http://localhost:3080>. Express serves the built React app and API from **port 3000 inside the container**; Vite is absent from the runtime image. Host port 3080 avoids the existing Grafana port 3000 and development API port 3001. A healthy startup shows `Up ... (healthy)` and `127.0.0.1:3080->3000/tcp`; the health response contains `status: ok` and `database: connected`. No host Node installation is needed to build or run the Docker app.
 
-Compose publishes the app on localhost and stores SQLite in the `cinebook-data` named volume. The host `data` directory and `.env` file are excluded from the image. Compose reads `PORT` from your environment or `.env` as the host port; the container always listens on port 3000. Container `DB_PATH` is fixed to the named volume. When using a different host port, set `SMOKE_BASE_URL` to the matching URL.
+Compose publishes only on localhost and stores SQLite in the **cinebook-data** named volume at `/app/data`. It keeps that existing volume key so previous Compose bookings remain available. `APP_PORT` selects the host port, independently of the development `PORT` setting. The container gets explicit production values for `NODE_ENV`, `PORT`, `DB_PATH`, and `TZ`; the host `.env` and `data/` are excluded from the image. The runtime uses the non-root `node` user, a read-only root filesystem, a temporary `/tmp`, and a writable database volume.
 
-```sh
-docker compose logs --follow
+```powershell
+docker compose exec -T app node server/healthcheck.js
+docker compose restart app
+docker compose up --detach --wait --wait-timeout 90 app
 docker compose down
 ```
 
-Stopping with `docker compose down` preserves reservations. `docker compose down --volumes` deletes the demo container's booking data. Local application data in `data/` is separate.
+Normal `docker compose down` preserves the named volume and reservations. Do not add `--volumes` when keeping bookings. If upgrading from the earlier service named `cinebook`, use `docker compose up --detach --wait --wait-timeout 90 --remove-orphans app` once to remove its old container while retaining the same named database volume.
+
+After building the image, `npm run test:docker` (Node.js 24) automatically checks the production image, native Linux SQLite, real booking/duplicate-seat behavior, and persistence across restart, replacement, and Compose down/up. It uses a separate random project/port and deletes only its generated test data. See [the Docker deployment guide](docs/DOCKER.md) for exact build, startup, testing, log, shutdown, persistence, and college-report screenshot instructions. This phase adds no monitoring services.
 
 ## Continuous integration
 
@@ -183,6 +194,6 @@ Capture these for the college report: desktop homepage with ten movies/count, mo
 - `client/dist`: Generated production assets, ignored by Git.
 - `data`: Local databases, ignored by Git.
 
-Run commands from the project root. This folder currently sits inside a parent Git repository; it does not have its own `.git` directory.
+Run commands from the project root.
 
 Implementation references: [Docker's Node.js guide](https://docs.docker.com/guides/nodejs/), [Playwright CI](https://playwright.dev/docs/ci), and [GitHub Actions for Node.js](https://docs.github.com/en/actions/tutorials/build-and-test-code/nodejs).

@@ -16,7 +16,8 @@
     "test": "vitest run --config vitest.config.js",
     "test:watch": "vitest --config vitest.config.js",
     "test:e2e": "playwright test",
-    "test:smoke": "node scripts/smoke.mjs"
+    "test:smoke": "node scripts/smoke.mjs",
+    "test:docker": "node scripts/test-docker.mjs"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",
