@@ -5,6 +5,7 @@ const useEdge = process.platform === "win32";
 export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.browser.spec.js",
+  forbidOnly: Boolean(process.env.CI),
   workers: 1,
   reporter: [
     ["list"],

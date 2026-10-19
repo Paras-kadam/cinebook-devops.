@@ -2,6 +2,12 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
+      - "feature/**"
+      - "feat/**"
+      - "fix/**"
+      - "ci/**"
   pull_request:
   workflow_dispatch:
 
@@ -9,59 +15,44 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Build and test
+  verify:
+    name: Tests, application build and Docker build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       TZ: Asia/Kolkata
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - name: Check out the repository
+        uses: actions/checkout@v6
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
-      - name: Save reports and screenshots
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run API and startup tests
+        run: npm test
+      - name: Build the application
+        run: npm run build
+      - name: Install Chromium for browser tests
+        run: npx playwright install --with-deps chromium
+      - name: Run browser tests
+        run: npm run test:e2e
+      - name: Verify the Docker image builds
+        run: docker build --tag cinebook:ci .
+      - name: Save test reports and screenshots
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v5
         with:
-          name: test-results
+          name: ci-test-results
           path: |
             .artifacts/
             test-results/
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7
-
-  container:
-    name: Build and smoke-test container
-    needs: test
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      COMPOSE_PROJECT_NAME: cinebook-ci
-      PORT: "3001"
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: .nvmrc
-          package-manager-cache: false
-      - run: docker compose build
-      - run: docker compose up --detach --wait --wait-timeout 90
-      - run: npm run test:smoke
-      - name: Show container logs
-        if: failure()
-        run: docker compose logs --no-color
-      - name: Remove CI containers and test data
-        if: always()
-        run: docker compose down --volumes --remove-orphans

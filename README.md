@@ -89,9 +89,58 @@ Stopping with `docker compose down` preserves reservations. `docker compose down
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs on pushes, pull requests, and manual dispatch. It installs Node.js 24 from `.nvmrc`, runs the API tests, builds the frontend, and runs browser tests with Chromium. Reports and screenshots are retained for seven days. A second job builds the Docker image, waits for its health check, and runs the smoke checks against the container before removing its temporary volume.
+`.github/workflows/ci.yml` runs on pushes to `main`, `feature/**`, `feat/**`, `fix/**`, and `ci/**`; on pull requests to any branch; and on manual dispatch. For example, pushing `feature/seat-validation` runs CI. Other branch names still receive CI when opened as a pull request. GitHub's [workflow trigger documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpushbranchestagsbranches-ignoretags-ignore) explains these filters.
 
-Place this project at the root of its own GitHub repository for the workflow to run. The workflow builds and tests locally on GitHub runners; it does not publish an image or deploy the application.
+One Ubuntu job, **Tests, application build and Docker build**, performs these steps in order:
+
+1. Check out the repository and install Node.js 24 using `.nvmrc`.
+2. Run `npm ci` against the committed `package-lock.json`.
+3. Run `npm test` for API and startup checks, including duplicate-seat rejection, concurrent reservations, and transaction rollback.
+4. Run `npm run build` to produce the application assets.
+5. Install the Chromium browser/system dependencies with `npx playwright install --with-deps chromium`.
+6. Run `npm run test:e2e`. Focused `.only` tests fail in CI instead of silently skipping other checks.
+7. Run `docker build --tag cinebook:ci .` to verify the image builds. This phase does not start a container, push an image, deploy the app, or configure monitoring.
+8. Save available reports and screenshots as the **ci-test-results** artifact for seven days, including when an earlier step fails. Cancelled runs skip this upload.
+
+The existing root `test`, `build`, and `test:e2e` scripts run without user input. The `dev`, `dev:server`, `dev:client`, `test:watch`, and `start` scripts intentionally keep running and are not CI checks. `test:smoke` needs a running production server and is not part of this build-only phase. Both `package.json` and `.nvmrc` select Node 24; the lockfile contains the native packages needed on Linux and Windows.
+
+### Verify a green run in GitHub
+
+Keep this project at the repository root, with `.github/workflows/ci.yml`, `package.json`, `package-lock.json`, `.nvmrc`, and `Dockerfile` committed. From the project root, the following commands prepare a feature branch and push only the CI changes made in this phase. An `origin` remote must already point to your GitHub repository:
+
+```powershell
+git switch -c ci/github-actions
+git add .github/workflows/ci.yml playwright.config.js README.md
+git commit -m "ci: verify tests, application build and Docker image"
+git push -u origin ci/github-actions
+```
+
+Open the repository on GitHub, select **Actions → CI**, and open the run matching that commit. A green run must show **Success** for **Tests, application build and Docker build**. Expand the install, API tests, app build, browser tests, and Docker build steps to see their actual logs. A PR from this branch should also show the CI check under its **Checks** tab. These views are described in [GitHub's workflow-run guide](https://docs.github.com/en/actions/how-tos/monitor-workflows/view-workflow-run-history).
+
+On the run summary, download **ci-test-results** to inspect `.artifacts/vitest-results.json`, `.artifacts/browser-results.json`, screenshots, and any failure traces. If a run is red, open the first failed step, fix that failure locally, commit, and push again. A skipped Docker step is not proof of a successful image build. After the workflow reaches `main`, **Actions → CI → Run workflow** can start a manual run.
+
+For the college report, capture the workflow YAML, the green run summary showing the commit/branch, the passing API and browser-test logs, the completed Docker-build step, and the artifact download area. Until a GitHub run actually completes, local passing commands are local evidence only.
+
+### Run the CI checks locally on Windows
+
+Stop a previous development server before reinstalling dependencies in its checkout, then use:
+
+```powershell
+Set-Location -LiteralPath 'C:\Users\Paras Kadam\Desktop\cinebook-devops'
+$runtimeDir = (Resolve-Path '.tools\node-v24.22.0-win-x64').Path
+$env:Path = $runtimeDir + ';' + $env:Path
+$env:CI = 'true'
+$env:TZ = 'Asia/Kolkata'
+npm.cmd ci
+npm.cmd test
+npm.cmd run build
+npm.cmd run test:e2e
+docker build --tag cinebook:ci .
+```
+
+Use an installed Node.js 24 if this checkout has no `.tools` runtime. Windows browser checks use installed Microsoft Edge; GitHub's Ubuntu runner installs Chromium. Docker Desktop must be running in Linux container mode for the image-build check. No deployment credentials or application API keys are needed by the workflow.
+
+CI-phase local verification passed on Node.js 24.22.0 with `CI=true`: clean `npm ci`, 58 API/startup tests, the production build, 12 Edge browser tests, and `docker build --tag cinebook:ci .`. Workflow YAML parsing, branch-pattern checks, and `git diff --check` also passed. Dependency installation and npm checks used an isolated fresh source checkout under `.artifacts/ci-verification` so the running application's dependencies were not replaced. Its screenshots/reports are in `.artifacts/ci-verification/.artifacts`; the consolidated result is `.artifacts/ci-verification-results.json`. These ignored local artifacts are not a completed GitHub Actions run.
 
 ## API
 
