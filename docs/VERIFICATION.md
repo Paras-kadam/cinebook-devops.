@@ -15,7 +15,7 @@ Public deployment has not occurred. No public URL, Render storage durability, or
 | Render YAML syntax/settings | Parsed; persistent disk, healthcheck and checksPass gate present |
 | Secret checks | No common GitHub/AWS token or private-key patterns found in tracked source or three existing commits; `.env` and databases are ignored. This is a scoped pattern scan. |
 | Git whitespace | `git diff --check` passed |
-| Remote GitHub Actions | See the deployment pull request's Checks tab; remote execution is distinct from all local results above |
+| Remote GitHub Actions | [Initial Linux run passed](https://github.com/Paras-kadam/cinebook-devops./actions/runs/40729733936) for `38cd0c2`; see [PR #1 Checks](https://github.com/Paras-kadam/cinebook-devops./pull/1/checks) for the latest commit. This is distinct from local verification. |
 | Public HTTPS, live browser and actual Render restart persistence | Pending owner account connection, recurring-cost approval, deployment and live verification |
 
 The original Compose project uses existing `cinebook-devops_cinebook-data`, `prometheus-data`, and `grafana-data` volumes. A consistent pre-startup SQLite backup of the existing database was created at `/app/data/backups/cinebook-1793205736119-a875f5072ccd.sqlite` (one original booking). Monitoring verification deliberately added one demo reservation. No original records or volumes were deleted.
@@ -23,3 +23,5 @@ The original Compose project uses existing `cinebook-devops_cinebook-data`, `pro
 The stack is running only on loopback: CineBook **http://localhost:3080**, Prometheus **http://localhost:9092**, Grafana **http://localhost:3002**. Other projects occupying 3000/3001/9090 remain running. These are local evidence URLs, not publicly shareable URLs.
 
 Keep detailed reports, SQLite backups, traces and private booking evidence under ignored `.artifacts/`. Source backups of edited files are under `.artifacts/deployment-before-*`. Do not publish those private artifacts.
+
+The running database was compared with the pre-startup backup: the original booking and all original seat rows remain unchanged; the current booking total is two after one intentional monitoring test reservation. Screenshots of the current homepage, Prometheus target and Grafana dashboard are retained privately as `.artifacts/current-local-*.png`. CI artifact uploads exclude SQLite/database files, environment files and private booking evidence.

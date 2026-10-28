@@ -15,7 +15,7 @@ Official references checked 28 October 2026: [pricing](https://render.com/pricin
 ## Before clicking a paid deployment button
 
 1. The source repository is **[Paras-kadam/cinebook-devops.](https://github.com/Paras-kadam/cinebook-devops.)**. The repository name really ends with a period; do not choose another similarly named project.
-2. Ensure the prepared changes, including monitoring files and `render.yaml`, are in GitHub. Merge the verified deployment pull request to main, then open **Actions → CI** and confirm the exact main commit is green.
+2. Ensure the prepared changes, including monitoring files and `render.yaml`, are in GitHub. Open [deployment pull request #1](https://github.com/Paras-kadam/cinebook-devops./pull/1). After its Checks are green, click **Ready for review** if it is still a draft, then **Merge pull request → Confirm merge**. Next open **Actions → CI** and confirm the exact main commit is green. Do not bypass a failed check.
 3. Keep existing local databases/volumes. A new Render disk starts with seeded movies and no local bookings. Existing local bookings remain local; they are not silently uploaded or deleted. If you need them on the public site, arrange a consistent backup/import before taking new cloud bookings. Do not overwrite a running SQLite database with a raw file copy.
 4. Confirm approval for the displayed recurring cost. Account sign-in and any payment details must be entered by the owner privately, never pasted into chat.
 

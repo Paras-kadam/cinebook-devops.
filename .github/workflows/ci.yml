@@ -58,6 +58,10 @@ jobs:
           path: |
             .artifacts/
             test-results/
+            !**/*.sqlite*
+            !**/*.db*
+            !**/.env*
+            !.artifacts/*private*
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7
