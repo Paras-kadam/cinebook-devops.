@@ -1,0 +1,38 @@
+# Creates PAID resources only after the owner reviews and approves in Render.
+services:
+  - type: web
+    name: cinebook
+    runtime: docker
+    plan: starter
+    region: singapore
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    numInstances: 1
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    disk:
+      name: cinebook-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: '10000'
+      - key: TZ
+        value: Asia/Kolkata
+      - key: DB_PATH
+        value: /app/data/cinebook.sqlite
+      - key: PERSISTENT_DATA_DIR
+        value: /app/data
+      - key: REQUIRE_PERSISTENT_DISK
+        value: 'true'
+      - key: METRICS_REQUIRE_AUTH
+        value: 'true'
+      - key: METRICS_TOKEN
+        generateValue: true
+      - key: TRUST_PROXY
+        value: '1'
+      - key: REQUEST_LOGGING
+        value: 'true'

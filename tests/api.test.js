@@ -156,11 +156,11 @@ describe("CineBook API", () => {
     expect(response.text).toContain("cinebook_movies 10\n");
     expect(response.text).toContain("cinebook_bookings 1\n");
     expect(response.text).toMatch(/cinebook_uptime_seconds \d+(?:\.\d+)?\n/);
-    expect(response.text).toContain("# TYPE cinebook_http_request_duration_seconds summary\n");
+    expect(response.text).toContain("# TYPE cinebook_http_request_duration_seconds histogram\n");
     expect(response.text).not.toContain(reference);
     expect(response.text).not.toContain("aarav@example.com");
-    for (const line of response.text.trim().split("\n").filter((line) => !line.startsWith("#"))) {
-      expect(line).toMatch(/^[a-zA-Z_:][a-zA-Z0-9_:]*(?:\{[^}]*\})? \d+(?:\.\d+)?(?:e[+-]?\d+)?$/);
+    for (const line of response.text.trim().split("\n").filter((line) => line.trim() && !line.startsWith("#"))) {
+      expect(line).toMatch(/^[a-zA-Z_:][a-zA-Z0-9_:]*(?:\{[^}]*\})? (?:[+-]?\d+(?:\.\d+)?(?:e[+-]?\d+)?|[+-]?Inf|NaN)$/);
     }
   });
 

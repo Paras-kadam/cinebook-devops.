@@ -16,3 +16,6 @@ coverage/
 *.log
 .DS_Store
 Thumbs.db
+
+monitoring/secrets/
+compose.override.local.yaml

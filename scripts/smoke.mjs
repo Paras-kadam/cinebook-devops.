@@ -5,7 +5,12 @@ const baseURL = new URL(process.env.SMOKE_BASE_URL || `http://127.0.0.1:${proces
 async function get(path) {
   const url = new URL(path, baseURL);
   assert.equal(url.origin, baseURL.origin, "Smoke checks must stay on the app origin");
-  const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(10_000),
+    redirect: "error",
+    headers: path === "/metrics" && process.env.METRICS_TOKEN
+      ? { Authorization: `Bearer ${process.env.METRICS_TOKEN}` } : {},
+  });
   assert.equal(response.status, 200, `${url.pathname} must return HTTP 200`);
   return response;
 }
@@ -42,6 +47,10 @@ try {
   const seats = await (await get(`/api/showtimes/${showtimes[0].id}/seats`)).json();
   assert.equal(seats.rows.length * seats.seatsPerRow, 60);
 
+  if (process.env.METRICS_TOKEN) {
+    const unauthenticated = await fetch(new URL("/metrics", baseURL), { redirect: "error" });
+    assert.equal(unauthenticated.status, 401, "Hosted metrics must reject anonymous access");
+  }
   const metrics = await get("/metrics");
   assert.match(metrics.headers.get("content-type") || "", /text\/plain/);
   assert.match(await metrics.text(), /^# (?:HELP|TYPE) /m);

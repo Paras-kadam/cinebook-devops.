@@ -4,6 +4,8 @@ import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openDatabase, serializeMovie, serializeShowtime } from "./database.js";
+import { createMetrics } from "./metrics.js";
+import { configureSecurity, validateSecurity } from "./security.js";
 import {
   SEAT_ROWS,
   SEATS_PER_ROW,
@@ -35,13 +37,6 @@ function validDate(value) {
     return false;
   const parsed = showtimeDate(value, "00:00");
   return !Number.isNaN(parsed.getTime()) && localDateString(parsed) === value;
-}
-
-function metricLabel(value) {
-  return String(value)
-    .replaceAll("\\", "\\\\")
-    .replaceAll('"', '\\"')
-    .replaceAll("\n", "\\n");
 }
 
 function sortedSeats(seats) {
@@ -117,29 +112,22 @@ export function createApp({
   serveClient = false,
   clientDistPath = resolve(serverDirectory, "../client/dist"),
   now = () => new Date(),
+  metricsToken = process.env.METRICS_TOKEN || "",
+  requireMetricsAuth = process.env.RENDER === "true" || process.env.METRICS_REQUIRE_AUTH === "true",
+  trustProxy = Number(process.env.TRUST_PROXY || 0),
+  apiLimit = 300,
+  bookingLimit = 60,
+  requestLogging = process.env.REQUEST_LOGGING === "true",
 } = {}) {
   const app = express();
+  validateSecurity({ metricsToken, requireMetricsAuth, trustProxy });
   const db = openDatabase(dbPath, now());
   app.locals.db = db;
   app.disable("x-powered-by");
-  const startedAt = performance.now();
-  const requestMetrics = new Map();
-  app.use((request, response, next) => {
-    const requestedAt = performance.now();
-    response.on("finish", () => {
-      // Route templates keep booking references and other user input out of metrics.
-      const labels = [
-        `method="${metricLabel(request.method)}"`,
-        `route="${metricLabel(request.route?.path || "unmatched")}"`,
-        `status="${response.statusCode}"`,
-      ].join(",");
-      const metric = requestMetrics.get(labels) || { count: 0, duration: 0 };
-      metric.count += 1;
-      metric.duration += (performance.now() - requestedAt) / 1000;
-      requestMetrics.set(labels, metric);
-    });
-    next();
-  });
+  const metrics = createMetrics(db);
+  app.use(metrics.trackRequest);
+  configureSecurity(app, { serveClient, metricsToken, requireMetricsAuth, trustProxy,
+    apiLimit, bookingLimit, requestLogging });
   app.use(express.json({ limit: "16kb" }));
   app.use("/api", (_request, response, next) => {
     response.set("Cache-Control", "no-store");
@@ -261,39 +249,11 @@ export function createApp({
     response.json({ status: "ok", database: "connected" });
   });
 
-  app.get("/metrics", (_request, response) => {
-    const movieCount = db
-      .prepare("SELECT COUNT(*) AS count FROM movies")
-      .get().count;
-    const bookingCount = db
-      .prepare("SELECT COUNT(*) AS count FROM bookings")
-      .get().count;
-    const metrics = [
-      "# HELP cinebook_uptime_seconds Seconds since this application started.",
-      "# TYPE cinebook_uptime_seconds gauge",
-      `cinebook_uptime_seconds ${(performance.now() - startedAt) / 1000}`,
-      "# HELP cinebook_movies Number of movies stored in SQLite.",
-      "# TYPE cinebook_movies gauge",
-      `cinebook_movies ${movieCount}`,
-      "# HELP cinebook_bookings Number of confirmed bookings stored in SQLite.",
-      "# TYPE cinebook_bookings gauge",
-      `cinebook_bookings ${bookingCount}`,
-      "# HELP cinebook_http_requests_total Completed HTTP requests by route and status.",
-      "# TYPE cinebook_http_requests_total counter",
-      ...Array.from(requestMetrics, ([labels, metric]) =>
-        `cinebook_http_requests_total{${labels}} ${metric.count}`,
-      ),
-      "# HELP cinebook_http_request_duration_seconds Completed HTTP request duration in seconds.",
-      "# TYPE cinebook_http_request_duration_seconds summary",
-      ...Array.from(requestMetrics, ([labels, metric]) => [
-        `cinebook_http_request_duration_seconds_sum{${labels}} ${metric.duration}`,
-        `cinebook_http_request_duration_seconds_count{${labels}} ${metric.count}`,
-      ]).flat(),
-    ];
+  app.get("/metrics", async (_request, response) => {
     response
-      .set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+      .set("Content-Type", metrics.registry.contentType)
       .set("Cache-Control", "no-store")
-      .send(`${metrics.join("\n")}\n`);
+      .send(await metrics.registry.metrics());
   });
 
   app.get("/api/movies", (_request, response) => {
@@ -385,6 +345,9 @@ export function createApp({
       const input = bookingInput(request.body);
       // IMMEDIATE takes the SQLite write lock before checking and inserting seats.
       const reference = reserveSeats.immediate(input);
+      // The transaction wrapper returns only after COMMIT. Failed or rolled-back
+      // reservations must never increase the confirmed-booking counter.
+      metrics.confirmedBookings.inc();
       response.status(201).json({ booking: getBooking(reference) });
     } catch (error) {
       if (error.code === "SQLITE_CONSTRAINT_UNIQUE") {
@@ -429,8 +392,13 @@ export function createApp({
 
   if (serveClient) {
     const indexPath = resolve(clientDistPath, "index.html");
+    app.use((_request, response, next) => {
+      response.locals.metricsRoute = "static";
+      next();
+    });
     app.use(express.static(clientDistPath));
     app.use((request, response, next) => {
+      response.locals.metricsRoute = "unmatched";
       if (
         request.method !== "GET" ||
         !request.accepts("html") ||
@@ -440,6 +408,7 @@ export function createApp({
       }
       // Missing asset requests must remain 404s instead of returning the app HTML.
       if (/\.[a-z\d]+$/i.test(request.path)) return next();
+      response.locals.metricsRoute = "frontend";
       response.sendFile(indexPath);
     });
   }
@@ -470,7 +439,7 @@ export function createApp({
         .status(error.status)
         .json({ error: error.message, code: error.code });
     }
-    console.error("Unexpected application error:", error);
+    console.error(JSON.stringify({ event: "application_error", code: error.code || "UNKNOWN" }));
     return response
       .status(500)
       .json({

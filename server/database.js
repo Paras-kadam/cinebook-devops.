@@ -12,6 +12,7 @@ export function openDatabase(dbPath, now) {
     db.pragma("foreign_keys = ON");
     db.pragma("busy_timeout = 5000");
     db.pragma("journal_mode = WAL");
+    db.pragma("synchronous = FULL");
     db.exec(`
       CREATE TABLE IF NOT EXISTS movies (
         id INTEGER PRIMARY KEY,

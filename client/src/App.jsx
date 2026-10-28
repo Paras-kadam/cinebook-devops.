@@ -151,7 +151,7 @@ function Header({ route }) {
             <MapPin size={15} /> New Delhi
           </span>
           <span className="demo-badge">
-            <i /> Local demo
+            <i /> College demo
           </span>
         </div>
       </div>
