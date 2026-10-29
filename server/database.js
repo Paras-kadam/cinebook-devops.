@@ -3,16 +3,7 @@ import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { seedMovies, seedShowtimes } from "./seed.js";
 
-export function openDatabase(dbPath, now) {
-  if (dbPath !== ":memory:")
-    mkdirSync(dirname(resolve(dbPath)), { recursive: true });
-
-  const db = new Database(dbPath);
-  try {
-    db.pragma("foreign_keys = ON");
-    db.pragma("busy_timeout = 5000");
-    db.pragma("journal_mode = WAL");
-    db.exec(`
+export const schemaSQL = `
       CREATE TABLE IF NOT EXISTS movies (
         id INTEGER PRIMARY KEY,
         title TEXT NOT NULL,
@@ -63,7 +54,19 @@ export function openDatabase(dbPath, now) {
         ON showtimes(movie_id, show_date, start_time);
       CREATE INDEX IF NOT EXISTS booked_seats_booking
         ON booked_seats(booking_id);
-    `);
+`;
+
+export function openDatabase(dbPath, now) {
+  if (dbPath !== ":memory:")
+    mkdirSync(dirname(resolve(dbPath)), { recursive: true });
+
+  const db = new Database(dbPath);
+  try {
+    db.pragma("foreign_keys = ON");
+    db.pragma("busy_timeout = 5000");
+    db.pragma("journal_mode = WAL");
+    db.pragma("synchronous = FULL");
+    db.exec(schemaSQL);
     seedMovies(db);
     seedShowtimes(db, now);
     return db;
@@ -104,5 +107,32 @@ export function serializeShowtime(row) {
     screen: row.screen,
     format: row.format,
     price: row.price,
+  };
+}
+
+/** Build the same ticket response for stored rows and a just-committed reservation. */
+export function serializeBooking(row, seats) {
+  return {
+    reference: row.reference,
+    customerName: row.customer_name,
+    customerEmail: row.customer_email,
+    seats: seats.toSorted((left, right) =>
+      left.charCodeAt(0) - right.charCodeAt(0) || Number(left.slice(1)) - Number(right.slice(1))),
+    total: row.total,
+    unitPrice: row.unit_price,
+    createdAt: row.created_at,
+    movie: {
+      id: row.movie_id,
+      title: row.title,
+      poster: row.poster,
+      durationMinutes: row.duration_minutes,
+      certificate: row.certificate,
+    },
+    showtime: {
+      date: row.show_date,
+      time: row.start_time,
+      screen: row.screen,
+      format: row.format,
+    },
   };
 }

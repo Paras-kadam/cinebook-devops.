@@ -94,7 +94,14 @@ try {
   });
 
   const port = await freePort();
-  composeEnvironment = { ...process.env, COMPOSE_PROJECT_NAME: project, APP_PORT: String(port) };
+  composeEnvironment = {
+    ...process.env,
+    COMPOSE_PROJECT_NAME: project,
+    APP_PORT: String(port),
+    // App-only verification never starts Grafana, but Compose validates all variables.
+    GF_SECURITY_ADMIN_USER: "isolated-docker-test",
+    GF_SECURITY_ADMIN_PASSWORD: randomBytes(32).toString("hex"),
+  };
   baseURL = new URL(`http://127.0.0.1:${port}`);
   results.baseURL = baseURL.origin;
   console.log(`Testing isolated Compose project ${project} at ${baseURL.origin}`);

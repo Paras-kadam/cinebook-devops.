@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: CineBook Prometheus
+    uid: cinebook-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    version: 1
+    jsonData:
+      httpMethod: POST
+      timeInterval: 10s
+      prometheusType: Prometheus

@@ -1,0 +1,33 @@
+# Strict $0 deployment: remote Turso Free stores bookings; Render has no paid disk.
+services:
+  - type: web
+    name: cinebook
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: '10000'
+      - key: TZ
+        value: Asia/Kolkata
+      - key: DATABASE_PROVIDER
+        value: turso
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
+      - key: METRICS_REQUIRE_AUTH
+        value: 'true'
+      - key: METRICS_TOKEN
+        generateValue: true
+      - key: TRUST_PROXY
+        value: '1'
+      - key: REQUEST_LOGGING
+        value: 'true'

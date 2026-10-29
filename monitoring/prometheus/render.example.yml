@@ -1,0 +1,11 @@
+# TEMPLATE ONLY: merge this additional job into the local scrape_configs after deployment.
+# Supply the actual assigned Render hostname. This file is not an active configuration.
+scrape_configs:
+  - job_name: cinebook-production
+    scheme: https
+    metrics_path: /metrics
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/secrets/cinebook-metrics-token
+    static_configs:
+      - targets: [REPLACE_WITH_ACTUAL_RENDER_HOSTNAME]

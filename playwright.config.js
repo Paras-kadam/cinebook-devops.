@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { randomBytes } from "node:crypto";
 
 const useEdge = process.platform === "win32";
 
@@ -28,7 +29,7 @@ export default defineConfig({
     env: {
       NODE_ENV: "production",
       PORT: "3100",
-      DB_PATH: "./data/browser-test.sqlite",
+      DB_PATH: `./.artifacts/browser-${randomBytes(6).toString("hex")}.sqlite`,
     },
   },
 });

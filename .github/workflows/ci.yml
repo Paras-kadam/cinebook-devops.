@@ -45,6 +45,12 @@ jobs:
         run: npm run test:e2e
       - name: Verify the Docker image builds
         run: docker build --tag cinebook:ci .
+      - name: Verify container health, native SQLite and booking persistence
+        run: |
+          docker tag cinebook:ci cinebook:local
+          npm run test:docker
+          node scripts/test-cloud.mjs
+          node scripts/test-turso-network.mjs
       - name: Save test reports and screenshots
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v5
@@ -53,6 +59,10 @@ jobs:
           path: |
             .artifacts/
             test-results/
+            !**/*.sqlite*
+            !**/*.db*
+            !**/.env*
+            !.artifacts/*private*
           include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 7

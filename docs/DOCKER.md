@@ -169,6 +169,8 @@ Successful checks print `PASS`, followed by `Docker verification passed`. The ru
 
 Local verification on **19 October 2026** passed: the production Docker image built, the regular application started at **http://localhost:3080**, all **58** API/startup tests passed, and the production smoke check passed against that URL. All **11** isolated Docker checks passed, including duplicate-seat rejection and persistence after restart, replacement, and Compose down/up. The tested Linux image ran Node.js **24.22.0** as UID **1000** with native SQLite **3.53.4**; Vite, copied environment files, and local databases were absent. The [Docker test results](../.artifacts/docker-test-results.json) record the checks and cleanup of the temporary test volume.
 
+For the current free-cloud architecture and latest test totals, use [the verification record](VERIFICATION.md). The dated results above describe the earlier local run. Local Compose still uses its original SQLite volume; the selected Render Free deployment stores bookings in a separate Turso libSQL database.
+
 ## Stop and start later
 
 ```powershell
