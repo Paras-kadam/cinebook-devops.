@@ -1,5 +1,7 @@
 # CineBook monitoring on Windows
 
+**Current CineBook ports on this machine:** app **3080**, Prometheus **9092**, Grafana **3002**, all on localhost. Set the overrides in the final section before using the default-port examples below; unrelated projects occupy 3000/3001/9090.
+
 The local production stack contains three Compose services. Express serves the built React website, Prometheus scrapes real application metrics, and Grafana displays them using a provisioned data source and dashboard. The public Render service is a separate deployment; see the production monitoring section below.
 
 | Service | Browser address | Internal address used by services |
@@ -203,7 +205,7 @@ Screenshots taken on temporary ports prove that particular test stack. They do n
 
 ## Production monitoring and occupied local ports
 
-The production budget covers the application and its persistent disk. It does **not** pay for public Prometheus or Grafana servers. Both college-required tools remain operational locally, with actual application/process metrics. A local dashboard is not evidence of production scraping unless the production target is explicitly added.
+The production budget is **US$0**: Render Free plus Turso Free. It does **not** include public Prometheus or Grafana servers. Both college-required tools remain operational locally, with actual application/process metrics. A local dashboard is not evidence of production scraping unless the production target is explicitly added.
 
 On this machine unrelated projects occupy 3000, 3001, and 9090. Keep them running. Use `APP_PORT=3080`, `PROMETHEUS_PORT=9092`, and `GRAFANA_PORT=3002` in the same PowerShell session for this CineBook stack. All internal addresses above stay the same. Override the verifier addresses:
 

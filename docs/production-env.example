@@ -1,0 +1,12 @@
+# Copy to the ignored .env.production.local, then privately enter your real values.
+DATABASE_PROVIDER=turso
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
+METRICS_REQUIRE_AUTH=true
+METRICS_TOKEN=
+NODE_ENV=production
+PORT=3102
+TZ=Asia/Kolkata
+TRUST_PROXY=0
+REQUEST_LOGGING=true
+LIVE_BASE_URL=

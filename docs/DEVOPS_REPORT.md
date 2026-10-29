@@ -1,6 +1,6 @@
 # CineBook college DevOps deployment report
 
-Prepared 28 October 2026. **Public HTTPS service: pending owner cloud connection and paid-service approval. Public URL: not issued or verified.** This document records completed preparation separately from live deployment evidence. Update the live section after successful deployment.
+Prepared 28 October 2026; updated 29 October 2026. **Public HTTPS service: pending owner cloud connection and free Render/Turso account setup and private database connection. Public URL: not issued or verified.** This document records completed preparation separately from live deployment evidence. Update the live section after successful deployment.
 
 ## Architecture
 
@@ -8,11 +8,11 @@ Prepared 28 October 2026. **Public HTTPS service: pending owner cloud connection
 flowchart LR
     Visitors[Desktop and mobile browsers] -->|HTTPS| Edge[Render TLS endpoint]
     Edge -->|PORT 10000| App[Single Docker service: Express and built React]
-    App -->|SQLite WAL and transactions| Disk[(Persistent disk at /app/data)]
-    Git[Existing GitHub main branch] --> CI[GitHub Actions: tests, build, browser, Docker]
+    App -->|Encrypted connection and committed write transactions| Disk[(Turso Free managed SQLite/libSQL)]
+    Git[Existing GitHub main branch] --> CI[GitHub Actions: tests, build, browser, Docker, libSQL network]
     CI -->|All checks pass| CD[Render GitHub integration]
     CD --> App
-    App --> Backup[Consistent SQLite backups copied off service]
+    Disk --> Backup[Private Turso exports and provider recovery]
     LocalApp[Local Docker CineBook on port 3080] --> LocalDB[(Existing named database volume)]
     Prom[Local Prometheus] -->|Real metrics: app:3000/metrics| LocalApp
     Grafana[Local Grafana on port 3002] --> Prom
@@ -25,13 +25,13 @@ The existing repository is `C:\Users\Paras Kadam\Desktop\cinebook-devops`, backe
 
 The monitoring Compose configuration referenced missing Grafana dashboard/provider files; these are now supplied with twelve panels using real Prometheus series. Local port collisions belong to other projects and are handled by configurable CineBook host ports. The Docker healthcheck uses Node's built-in HTTP fetch, avoiding a dependency on missing curl/wget inside the slim app image. Prometheus waits for app health, and Grafana waits for Prometheus readiness.
 
-Production preparation explicitly binds `0.0.0.0`, honors `PORT`, serves built React through Express, keeps `/api` requests same-origin, supports page refresh, and handles termination. Cloud startup refuses SQLite outside the actual mounted persistent disk and refuses absent/short metrics secrets. Helmet adds security/privacy headers; API and booking request limits return 429. Logs include safe route templates, status, and duration without booking references, emails, request bodies, or tokens. Booking validation, server pricing, atomic rollback, unique-seat constraints, existing styling, and all posters are preserved.
+Production preparation explicitly binds `0.0.0.0`, honors `PORT`, serves built React through Express, keeps `/api` requests same-origin, supports page refresh, and handles termination. The selected US$0 cloud mode uses Turso Free remote SQLite and refuses missing credentials or unencrypted URLs. Local SQLite disk mode still refuses ephemeral cloud storage. Both modes require cloud metrics authentication. Helmet adds security/privacy headers; API and booking request limits return 429. Logs include safe route templates, status, and duration without booking references, emails, request bodies, or tokens. Booking validation, server pricing, atomic rollback, unique-seat constraints, existing styling, and all posters are preserved.
 
 One baseline metrics test failed because its parser rejected a legal blank line. Its sample parser now ignores blank/comment lines while retaining numeric format assertions. Browser tests now select a fresh ignored database each run, retaining prior test and application records.
 
 ## CI/CD and Docker
 
-CI runs for main/supported feature and fix pushes, PRs, and manual dispatch. It performs `npm ci`, `npm test`, `npm run build`, Chromium browser tests, a Docker build, and isolated container/booking persistence verification. Failure stops later steps and prevents automatic Render deployment. Reports are uploaded as GitHub artifacts, not database or secret files.
+CI runs for main/supported feature and fix pushes, PRs, and manual dispatch. It performs `npm ci`, `npm test`, `npm run build`, Chromium browser tests, a Docker build, isolated container/booking persistence verification, and a separate official libSQL server test over HTTP. Failure stops later steps and prevents automatic Render deployment. Reports are uploaded as GitHub artifacts, not database or secret files.
 
 Render's GitHub connection is the deployment identity. `autoDeployTrigger: checksPass` links main's successful CI to CD without embedding deploy credentials. CI alone does not publish a website. The first service creation and manually forced deployments must be explicitly tied to an already verified main commit. Branch protection/required checks are a repository policy to review with the owner; this task does not silently change repository administration settings.
 
@@ -39,7 +39,7 @@ The Docker build compiles the existing Vite frontend and native SQLite dependenc
 
 ## Database and monitoring
 
-No database migration is needed. Startup creates missing tables/indexes and inserts missing seed rows without deleting existing records. The booking transaction uses an immediate write lock plus `UNIQUE(showtime_id, seat)`; conflicts return 409 and roll back the whole reservation. WAL and `synchronous=FULL` support committed data durability. Restart/replacement tests verify the same saved reference and unavailable seats. Local and cloud databases are separate unless an explicit backup/import is performed.
+The schema remains SQLite-compatible; the free cloud mode adds an asynchronous libSQL driver and remote transactions. Local SQLite and its existing records are preserved. Startup creates missing tables/indexes and inserts missing seed rows without deleting existing records. The booking transaction uses an immediate write lock plus `UNIQUE(showtime_id, seat)`; conflicts return 409 and roll back the whole reservation. Local SQLite uses WAL and `synchronous=FULL`; remote libSQL bookings are acknowledged only after the database transaction commits. Seat inserts use one transaction batch rather than up to sixty network round trips. Restart/replacement tests verify the same saved reference and unavailable seats. Local and cloud databases are separate unless an explicit backup/import is performed.
 
 The local stack demonstrates both Prometheus and Grafana. Metrics cover HTTP counts/latency, committed bookings, durable database booking totals, process CPU/memory, Node heap, event loop, and uptime. Process counters reset on restart; the SQLite-backed booking gauge persists. HTTP totals include operational probes. Grafana's data source/dashboard are provisioned. Production metrics use a private bearer token; optional HTTPS scraping from local Prometheus is documented. Continuous hosted monitoring would require a separate budget.
 
@@ -54,6 +54,8 @@ npm run build
 npm run test:e2e
 docker build --tag cinebook:local .
 npm run test:docker
+node scripts/test-cloud.mjs
+node scripts/test-turso-network.mjs
 docker compose config --quiet
 docker compose up --detach --wait --wait-timeout 180
 npm run test:monitoring
@@ -72,7 +74,7 @@ Current local verification and remote CI results are recorded in [VERIFICATION.m
 | Movie API, details, showtimes, search/filter, phone layout | Local tests recorded; public checks pending |
 | Select seats, confirm ticket, private reference retrieval | Local tests recorded; public checks pending |
 | Duplicate reservation returns 409 | Local tests recorded; public checks pending |
-| Same ticket survives a real Render restart/redeploy | Pending cloud disk and two-stage live test |
+| Same ticket survives a real Render restart/redeploy | Pending real Turso connection, Render deployment and two-stage live test |
 | Public health returns OK, anonymous metrics returns 401 | Local safeguards tested; live checks pending |
 | Exact deployed main commit passes GitHub Actions | See current verification record; production commit pending |
 | Local Prometheus target UP and Grafana real data | See current verification record |
@@ -81,7 +83,7 @@ Current local verification and remote CI results are recorded in [VERIFICATION.m
 
 Capture actual evidence with passwords, tokens, private references, and customer information hidden:
 
-1. Render service Live, assigned HTTPS address, verified commit, healthcheck, and 1 GB disk/mount path.
+1. Render service Live, assigned HTTPS address, verified commit, healthcheck, Free instance type and Turso connection-variable names with values hidden. Show the separate Turso libSQL database and Free plan without displaying tokens.
 2. Browser desktop and phone homepage with ten loaded posters; search/filter results.
 3. Movie details/showtimes, selected seats, booking confirmation, and successful reference lookup after refresh.
 4. Before/after Render restart events plus successful persistence verification and duplicate-seat rejection.
@@ -90,4 +92,13 @@ Capture actual evidence with passwords, tokens, private references, and customer
 7. Prometheus target `app:3000/metrics` UP; real booking/request values before and after a demo reservation.
 8. Grafana CineBook Overview with twelve populated panels and matching metric values.
 
-Before class, open the actual verified HTTPS URL in an incognito window and on a phone, check health and recent deployment status, and avoid redeploying during the demo. Keep a private demo booking reference ready. Open local Prometheus/Grafana in separate tabs and explain that their local application metrics are distinct from the public database unless optional production scraping is enabled. Create one demo reservation, show its confirmation/lookup, then show duplicate-seat prevention. Explain GitHub → CI → Render CD, Docker's multi-stage build, and the persistent disk. A local-only demonstration must not be presented as completed public deployment.
+Before class, open the actual verified HTTPS URL in an incognito window and on a phone, check health and recent deployment status, and avoid redeploying during the demo. Keep a private demo booking reference ready. Open local Prometheus/Grafana in separate tabs and explain that their local application metrics are distinct from the public database unless optional production scraping is enabled. Create one demo reservation, show its confirmation/lookup, then show duplicate-seat prevention. Explain GitHub → CI → Render CD, Docker's multi-stage build, and the external durable Turso database. A local-only demonstration must not be presented as completed public deployment.
+
+
+## Selected zero-cost hosting
+
+The owner selected a strict US$0 budget. The current Blueprint uses **Render Free + Turso Free**, with no paid Render disk. The original interface, local SQLite volume and Prometheus/Grafana stack remain intact. Cloud bookings commit to Turso remote storage and survive loss of the app filesystem. Free Render sleeps after 15 idle minutes and may take about a minute to wake; usage quotas can suspend the demo. Warm it before class and check both provider usage pages. Do not enable upgrades/overages.
+
+The app now supports async remote queries without removing the original SQLite path. Eleven additional libSQL tests cover actual database queries, commit/rollback, competing reservations, preserved prices/IDs, reopened app persistence, metrics and secure configuration. Schema/seed writes remain additive. Test fixture cleanup runs in a parent process after the native worker exits, fixing Windows file-release timing without touching application data.
+
+Account setup and actual HTTPS deployment are still pending. No paid resource has been created, and no public URL is claimed. The current deployment guide supersedes the earlier paid-disk recommendation.

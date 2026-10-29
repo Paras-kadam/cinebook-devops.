@@ -23,16 +23,16 @@ export function createMetrics(db) {
     name: "cinebook_movies",
     help: "Number of movies stored in SQLite.",
     registers,
-    collect() {
-      this.set(movieCount.get().count);
+    async collect() {
+      this.set((await movieCount.get()).count);
     },
   });
   new Gauge({
     name: "cinebook_bookings",
     help: "Number of confirmed bookings stored in SQLite, retained across restarts.",
     registers,
-    collect() {
-      this.set(bookingCount.get().count);
+    async collect() {
+      this.set((await bookingCount.get()).count);
     },
   });
 

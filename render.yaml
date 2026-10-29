@@ -1,20 +1,15 @@
-# Creates PAID resources only after the owner reviews and approves in Render.
+# Strict $0 deployment: remote Turso Free stores bookings; Render has no paid disk.
 services:
   - type: web
     name: cinebook
     runtime: docker
-    plan: starter
+    plan: free
     region: singapore
     branch: main
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    numInstances: 1
     healthCheckPath: /api/health
     autoDeployTrigger: checksPass
-    disk:
-      name: cinebook-data
-      mountPath: /app/data
-      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
@@ -22,12 +17,12 @@ services:
         value: '10000'
       - key: TZ
         value: Asia/Kolkata
-      - key: DB_PATH
-        value: /app/data/cinebook.sqlite
-      - key: PERSISTENT_DATA_DIR
-        value: /app/data
-      - key: REQUIRE_PERSISTENT_DISK
-        value: 'true'
+      - key: DATABASE_PROVIDER
+        value: turso
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
       - key: METRICS_REQUIRE_AUTH
         value: 'true'
       - key: METRICS_TOKEN

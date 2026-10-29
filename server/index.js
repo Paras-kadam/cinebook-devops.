@@ -1,9 +1,20 @@
 import { createApp } from "./app.js";
 import { port } from "./config.js";
 import { validateStorage } from "./runtime.js";
+import { openTursoDatabase } from "./turso.js";
+
+const provider = process.env.DATABASE_PROVIDER || "sqlite";
+if (!["sqlite", "turso"].includes(provider)) throw new Error("DATABASE_PROVIDER must be sqlite or turso.");
+const database = provider === "turso" ? await openTursoDatabase().catch(() => {
+  // SDK errors can contain connection details. Keep them out of hosted logs.
+  console.error(JSON.stringify({ event: "startup_failed", code: "TURSO_CONNECTION_FAILED",
+    message: "Check the private Turso settings, database permissions and provider availability." }));
+  process.exit(1);
+}) : undefined;
 
 const app = createApp({
-  dbPath: validateStorage(),
+  database,
+  dbPath: database ? undefined : validateStorage(),
   serveClient:
     process.env.NODE_ENV === "production" ||
     process.argv.includes("--production"),

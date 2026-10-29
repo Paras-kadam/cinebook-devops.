@@ -50,6 +50,7 @@ jobs:
           docker tag cinebook:ci cinebook:local
           npm run test:docker
           node scripts/test-cloud.mjs
+          node scripts/test-turso-network.mjs
       - name: Save test reports and screenshots
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v5
